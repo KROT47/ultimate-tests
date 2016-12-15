@@ -1,0 +1,25 @@
+{
+  "name": "ultimate-tests",
+  "version": "0.0.0",
+  "description": "Provides flexible tests environment",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KROT47/ultimate-tests.git"
+  },
+  "keywords": [
+    "test"
+  ],
+  "author": "KROT47",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KROT47/ultimate-tests/issues"
+  },
+  "homepage": "https://github.com/KROT47/ultimate-tests#readme",
+  "devDependencies": {
+    "extend": "^3.0.0"
+  }
+}
