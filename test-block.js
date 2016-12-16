@@ -167,12 +167,9 @@ class TestBlock {
 			return this._exit( true );
 		}
 
-		if ( this._ignoreTest() ) {
-			this.index++;
-			return this._run();
-		}
-
 		this.index++;
+
+		if ( this._ignoreTest() ) return this._run();
 
 		const testConfig = Extend( true, {}, TestConfig, tests[ this.index ] );
 
