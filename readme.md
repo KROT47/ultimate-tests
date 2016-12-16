@@ -2,6 +2,8 @@
 
 Provides flexible tests environment.
 
+To use babel just create file *.babelrc* in project root and install needed dependencies.
+
 **Usage example:**
 
 File: **test.js**

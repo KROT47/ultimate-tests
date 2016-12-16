@@ -7,6 +7,8 @@ const Extend = require( 'extend' );
 
 const TestBlock = require( './test-block' );
 
+require( 'babel-register' );
+
 
 /* --------------------------------- DefaultConfig --------------------------------- */
 
