@@ -19,7 +19,7 @@
     "url": "https://github.com/KROT47/ultimate-tests/issues"
   },
   "homepage": "https://github.com/KROT47/ultimate-tests#readme",
-  "devDependencies": {
+  "dependencies": {
     "babel-register": "^6.18.0",
     "extend": "^3.0.0"
   }
