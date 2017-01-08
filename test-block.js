@@ -116,11 +116,12 @@ class TestBlock {
 
 		this.testBlockName = testBlockName;
 
-		this._testBlock = testBlockGetter(
-			assert,
-			this._testLog.bind( this ),
-			this._testError.bind( this )
-		);
+		this._testBlock = testBlockGetter({
+			assert: 		assert,
+			log: 			this._testLog.bind( this ),
+			error: 			this._testError.bind( this ),
+			expectError: 	this._testExpectError.bind( this ),
+		});
 		this._testBlock = Extend( true, {}, TestBlockConfig, this._testBlock );
 	}
 
@@ -162,11 +163,6 @@ class TestBlock {
 
 		if ( this.index === tests.length - 1 ) return this._exit();
 
-		if ( this.error ) {
-			this._systemMessage( 'error', { error: this.error } );
-			return this._exit( true );
-		}
-
 		this.index++;
 
 		if ( this._ignoreTest() ) return this._run();
@@ -175,9 +171,21 @@ class TestBlock {
 
 		this._systemMessage( 'testStart' );
 
+
 		return (
-			Promise.resolve( testConfig.test.call( this._testBlock, this.index ) )
+			new Promise( ( resolve, reject ) => {
+				try {
+					resolve( testConfig.test.call( this._testBlock, this.index ) );
+				} catch ( e ) {
+					reject( e );
+				}
+			})
 				.then( () => {
+					if ( this.error ) {
+						this._systemMessage( 'error', { error: this.error } );
+						return this._exit( true );
+					}
+
 					this._systemMessage( 'testEnd' );
 
 					return this._run();
@@ -185,17 +193,7 @@ class TestBlock {
 		);
 	}
 
-	_ignoreTest() {
-		const testIndexes = this.testIndexes;
-
-		if ( testIndexes.only.length ) return !~testIndexes.only.indexOf( this.testIndex );
-
-		if ( testIndexes.except.length && ~testIndexes.except.indexOf( this.testIndex ) ) {
-			return true;
-		}
-
-		return false;
-	}
+	_ignoreTest() { return Helpers.ignore( this.testIndexes, this.testIndex ) }
 
 	_systemMessage( msgName, data ) {
 		const msg = this.logs.systemMessages[ msgName ];
@@ -231,6 +229,18 @@ class TestBlock {
 
 
 	_testError( err ) { this.error = err }
+
+	_testExpectError( msg, func ) {
+		var error;
+
+		try {
+			func();
+		} catch ( e ) {
+			error = e;
+		}
+
+		if ( !error ) this._testError( msg );
+	}
 
 	_ignore( index, testName ) {
 		if ( !this.testIndexes ) return false;

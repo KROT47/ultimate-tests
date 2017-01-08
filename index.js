@@ -7,6 +7,8 @@ const Extend = require( 'extend' );
 
 const TestBlock = require( './test-block' );
 
+const Helpers = require( './helpers' );
+
 require( 'babel-register' );
 
 
@@ -17,10 +19,17 @@ const DefaultConfig = {
 
 		testsDir: './',
 
+		// default config for each testBlock
 		defaultConfig: {},
 
+		// defines which testBlocks to run by names
+		testNames: {
+			only: [],
+			except: [],
+		},
+
 		tests: {
-			// testName: {
+			// tesBlocktName: {
 			// 	file: 'fileName',
 
 			//  @TestBlockConfig
@@ -40,6 +49,8 @@ class UltimateTests {
 
         this.index = 0;
 
+        this._checkForOnlyExcept();
+
 		this.run();
 	}
 
@@ -54,6 +65,9 @@ class UltimateTests {
 
 		const config = this._config;
 		const name = this._testKeys[ this.index++ ];
+
+		if ( this._ignoreTestBlock( name ) ) return this.run();
+
 		const testBlockConfig = config.tests[ name ];
 		const testConfig = Extend( true, {}, config.defaultConfig, testBlockConfig );
 		const testsDir = Path.resolve( config.rootDir, config.testsDir )
@@ -64,6 +78,36 @@ class UltimateTests {
 			.run()
 			.then( () => this.run() );
 	}
+
+
+	/* --------------------------------- Private --------------------------------- */
+
+    _checkForOnlyExcept() {
+    	const testNames = this._config.testNames;
+
+    	if ( testNames.only.length ) {
+    		this._log( `Executing only '${testNames.only.join( `', '` )}' test block${testNames.only.length > 1 ? 's' : ''}` );
+    		return;
+    	}
+
+    	if ( testNames.except.length ) {
+    		this._log( `Executing all test blocks except '${testNames.except.join( `', '` )}'` );
+    	}
+    }
+
+    _log() {
+    	const args = Array.prototype.slice.call( arguments );
+    	const str = '!!!!!!!!!!!!!!!!!!!!!!!!!!!';
+
+    	args.unshift( str );
+    	args.push( str );
+
+    	console.log();
+    	console.log.apply( console, args );
+    	console.log();
+    }
+
+	_ignoreTestBlock( name ) { return Helpers.ignore( this._config.testNames, name ) }
 }
 
 

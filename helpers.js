@@ -17,7 +17,9 @@ module.exports = {
 
 	resolveTemplate,
 
-	getData,
+    getData,
+
+	ignore,
 };
 
 
@@ -31,15 +33,47 @@ module.exports = {
 function valueOf( obj ) { return obj && typeof obj.valueOf === 'function' && obj.valueOf() || obj }
 
 /**
+ * Extends all properties
+ * @param (Object|Array) obj
+ * @param (Boolean) copyHiddenProps - if true - non enumerable props will be copied too
+ * @return (Object|Array)
+ */
+function deepExtendAll( target/*, options1, ...*/ ) {
+    var props, i, k, value;
+
+    for ( i = 1; i < arguments.length; ++i ) {
+        props = Object.getOwnPropertyNames( arguments[ i ] );
+
+        for ( k = props.length; k--; ) {
+            value = arguments[ i ][ props[ k ] ];
+
+            if ( value && typeof value === 'object' ) {
+                target[ props[ k ] ] = deepExtendAll( newObject( value ), value );
+            } else {
+                target[ props[ k ] ] = value;
+            }
+        }
+    }
+
+    return target;
+}
+
+/**
  * Prints anything correctly
  * @param (Mixed) obj
  * @return (String)
  */
 function print( obj ) {
-    obj = replaceComplexObjectsWithStrings( valueOf( obj ) );
+    var toPrint = valueOf( obj );
+
+    if ( toPrint && typeof toPrint === 'object' ) {
+        toPrint = deepExtendAll( newObject( toPrint ), toPrint );
+
+        toPrint = replaceComplexObjectsWithStrings( toPrint );
+    }
 
     return (
-        JSON.stringify( obj )
+        JSON.stringify( toPrint )
             .replace( /"(\w)/g, ' $1' )
             .replace( /"(.)/g, '$1' )
             .replace( /:(.)/g, ': $1' )
@@ -55,16 +89,16 @@ function newObject( obj ) { return Array.isArray( obj ) ? [] : {} }
  * @param (Object|Array) obj
  */
 function replaceComplexObjectsWithStrings( obj ) {
-	obj = Extend( true, newObject( obj ), obj );
-
-    for ( var i in obj ) {
+	for ( var i in obj ) {
     	if ( obj[ i ] instanceof Promise ) {
     		obj[ i ] = '[Promise]';
     		continue;
     	}
 
         switch ( typeof obj[ i ] ) {
-            case 'object': obj[ i ] = replaceComplexObjectsWithStrings( obj[ i ] );
+            case 'object':
+                obj[ i ] = valueOf( obj[ i ] );
+                obj[ i ] = replaceComplexObjectsWithStrings( obj[ i ] );
             break;
 
             case 'function': obj[ i ] = '[Function]';
@@ -76,6 +110,12 @@ function replaceComplexObjectsWithStrings( obj ) {
     return obj;
 }
 
+/**
+ * Returns resolved template string using one or more data objects
+ * @param (String) template
+ * @param (Object) ...data
+ * @return (String)
+ */
 function resolveTemplate( template/*, ...data*/ ) {
 	if ( !template ) return;
 
@@ -86,6 +126,13 @@ function resolveTemplate( template/*, ...data*/ ) {
     });
 }
 
+/**
+ * Returns first value from dataObjects by key or default value
+ * @param (Array|Object) dataObjects
+ * @param (String|Number) key
+ * @param (Mixed) defaultValue
+ * @return (Mixed)
+ */
 function getData( dataObjects, key, defaultValue ) {
     if ( Array.isArray( dataObjects ) ) {
         for ( var result, i = 0; i < dataObjects.length; ++i ) {
@@ -103,4 +150,18 @@ function getData( dataObjects, key, defaultValue ) {
     if ( value instanceof Error ) value = value + value.stack;
 
     return value;
+}
+
+/**
+ * Tells if some test should be ignored
+ * @param (Object) config
+ * @param (String|Number) key
+ * @return (Mixed)
+ */
+function ignore( config, key ) {
+    if ( config.only.length ) return !~config.only.indexOf( key );
+
+    if ( config.except.length && ~config.except.indexOf( key ) ) return true;
+
+    return false;
 }
