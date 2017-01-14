@@ -61,25 +61,9 @@ function deepExtendAll( target/*, options1, ...*/ ) {
 /**
  * Prints anything correctly
  * @param (Mixed) obj
+ * @param (Boolean?) showHiddenProps - prints object hidden props
  * @return (String)
  */
-// function print( obj ) {
-//     var toPrint = valueOf( obj );
-
-//     if ( toPrint && typeof toPrint === 'object' ) {
-//         toPrint = deepExtendAll( newObject( toPrint ), toPrint );
-
-//         toPrint = replaceComplexObjectsWithStrings( toPrint );
-//     }
-
-//     return (
-//         JSON.stringify( toPrint )
-//             .replace( /"(\w)/g, ' $1' )
-//             .replace( /"(.)/g, '$1' )
-//             .replace( /:(.)/g, ': $1' )
-//             .replace( /\}/g, ' }' )
-//     );
-// }
 function print( obj, showHiddenProps ) {
 	var toPrint = valueOf( obj );
 
@@ -91,47 +75,84 @@ function print( obj, showHiddenProps ) {
 
 	return _print( toPrint, showHiddenProps );
 }
-function _print( obj, showHiddenProps ) {
+function _print( obj, showHiddenProps, config ) {
+	config = Object.assign( {}, defaultPrintConfig, config );
+	config = config[ config.type ];
+
 	if ( !obj ) return obj;
 
 	if ( typeof obj !== 'object' ) return obj.toString();
 
 	const arr = [];
-	var i, template;
 
-	if ( Array.isArray( obj ) ) {
+	var props = [];
 
-		for ( i = 0; i < obj.length; ++i ) {
-			if ( typeof obj[ i ] === 'object' ) {
-				arr.push( _print( obj[ i ], showHiddenProps ) );
-			} else {
-				arr.push( obj[ i ] );
-			}
-		}
-
-		template = '[ printedObj ]';
-
+	if ( showHiddenProps ) {
+		props = getAllProperties( obj );
 	} else {
-		const props = [];
-
 		for ( i in obj ) props.push( i );
+	}
 
-		props.sort();
+	props.sort();
 
-		for ( i = 0; i < props.length; ++i ) {
-			if ( typeof obj[ props[ i ] ] === 'object' ) {
-				arr.push( `${props[ i ]}: ${_print( obj[ props[ i ] ], showHiddenProps )}` );
-			} else {
-				arr.push( `${props[ i ]}: ${obj[ props[ i ] ]}` );
-			}
-		}
+	var i, prop, printedProp, type;
 
-		template = '{ printedObj }';
+	for ( i = 0; i < props.length; ++i ) {
+		prop = props[ i ];
+
+		type = Array.isArray( obj[ prop ] ) ? 'Array' : 'Object';
+
+		printedProp =
+			typeof obj[ prop ] === 'object' ?
+				_print( obj[ prop ], showHiddenProps, { type } ) :
+				obj[ prop ];
+
+		arr.push(
+			config.propTemplate
+				.replace( 'prop', prop )
+				.replace( 'printedProp', printedProp )
+		);
 	}
 
 	const printedObj = arr.join( ', ' );
 
-	return template.replace( 'printedObj', printedObj );
+	return config.template.replace( 'printedObj', printedObj );
+}
+
+const defaultPrintConfig = {
+	Object: {
+		template: '{ printedObj }',
+		propTemplate: 'prop: printedProp',
+	},
+	Array: {
+		template: '[ printedObj ]',
+		propTemplate: 'printedProp',
+	},
+	type: 'Object',
+};
+
+function getAllProperties( obj ) {
+	const type = Array.isArray( obj ) ? Array : Object;
+
+	var props = getPropNames( obj );
+
+	var protoProps;
+
+	while ( ( obj = Object.getPrototypeOf( obj ) ) && obj !== type.prototype ) {
+		protoProps = getPropNames( obj );
+
+		props = props.concat( protoProps.filter( item => !~props.indexOf( item ) ) );
+	}
+
+	return props;
+}
+
+function getPropNames( obj ) {
+	const props = Object.getOwnPropertyNames( obj );
+
+	if ( Array.isArray( obj ) ) props.splice( props.indexOf( 'length' ), 1 );
+
+	return props;
 }
 
 // returns empty array or object due to obj type

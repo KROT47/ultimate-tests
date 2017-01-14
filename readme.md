@@ -25,6 +25,7 @@ new Tests({
 		    // 0 - only system messages ( default )
             // 1 - system + info messages
             // 2 - all messages
+            // 3 - print all hidden properties in objects
 			level: 0,
 			
 			// advanced
