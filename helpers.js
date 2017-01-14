@@ -17,7 +17,7 @@ module.exports = {
 
 	resolveTemplate,
 
-    getData,
+	getData,
 
 	ignore,
 };
@@ -39,23 +39,23 @@ function valueOf( obj ) { return obj && typeof obj.valueOf === 'function' && obj
  * @return (Object|Array)
  */
 function deepExtendAll( target/*, options1, ...*/ ) {
-    var props, i, k, value;
+	var props, i, k, value;
 
-    for ( i = 1; i < arguments.length; ++i ) {
-        props = Object.getOwnPropertyNames( arguments[ i ] );
+	for ( i = 1; i < arguments.length; ++i ) {
+		props = Object.getOwnPropertyNames( arguments[ i ] );
 
-        for ( k = props.length; k--; ) {
-            value = arguments[ i ][ props[ k ] ];
+		for ( k = props.length; k--; ) {
+			value = arguments[ i ][ props[ k ] ];
 
-            if ( value && typeof value === 'object' ) {
-                target[ props[ k ] ] = deepExtendAll( newObject( value ), value );
-            } else {
-                target[ props[ k ] ] = value;
-            }
-        }
-    }
+			if ( value && typeof value === 'object' ) {
+				target[ props[ k ] ] = deepExtendAll( newObject( value ), value );
+			} else {
+				target[ props[ k ] ] = value;
+			}
+		}
+	}
 
-    return target;
+	return target;
 }
 
 /**
@@ -63,22 +63,75 @@ function deepExtendAll( target/*, options1, ...*/ ) {
  * @param (Mixed) obj
  * @return (String)
  */
-function print( obj ) {
-    var toPrint = valueOf( obj );
+// function print( obj ) {
+//     var toPrint = valueOf( obj );
 
-    if ( toPrint && typeof toPrint === 'object' ) {
-        toPrint = deepExtendAll( newObject( toPrint ), toPrint );
+//     if ( toPrint && typeof toPrint === 'object' ) {
+//         toPrint = deepExtendAll( newObject( toPrint ), toPrint );
 
-        toPrint = replaceComplexObjectsWithStrings( toPrint );
-    }
+//         toPrint = replaceComplexObjectsWithStrings( toPrint );
+//     }
 
-    return (
-        JSON.stringify( toPrint )
-            .replace( /"(\w)/g, ' $1' )
-            .replace( /"(.)/g, '$1' )
-            .replace( /:(.)/g, ': $1' )
-            .replace( /\}/g, ' }' )
-    );
+//     return (
+//         JSON.stringify( toPrint )
+//             .replace( /"(\w)/g, ' $1' )
+//             .replace( /"(.)/g, '$1' )
+//             .replace( /:(.)/g, ': $1' )
+//             .replace( /\}/g, ' }' )
+//     );
+// }
+function print( obj, showHiddenProps ) {
+	var toPrint = valueOf( obj );
+
+	if ( toPrint && typeof toPrint === 'object' ) {
+		toPrint = deepExtendAll( newObject( toPrint ), toPrint );
+
+		toPrint = replaceComplexObjectsWithStrings( toPrint );
+	}
+
+	return _print( toPrint, showHiddenProps );
+}
+function _print( obj, showHiddenProps ) {
+	if ( !obj ) return obj;
+
+	if ( typeof obj !== 'object' ) return obj.toString();
+
+	const arr = [];
+	var i, template;
+
+	if ( Array.isArray( obj ) ) {
+
+		for ( i = 0; i < obj.length; ++i ) {
+			if ( typeof obj[ i ] === 'object' ) {
+				arr.push( _print( obj[ i ], showHiddenProps ) );
+			} else {
+				arr.push( obj[ i ] );
+			}
+		}
+
+		template = '[ printedObj ]';
+
+	} else {
+		const props = [];
+
+		for ( i in obj ) props.push( i );
+
+		props.sort();
+
+		for ( i = 0; i < props.length; ++i ) {
+			if ( typeof obj[ props[ i ] ] === 'object' ) {
+				arr.push( `${props[ i ]}: ${_print( obj[ props[ i ] ], showHiddenProps )}` );
+			} else {
+				arr.push( `${props[ i ]}: ${obj[ props[ i ] ]}` );
+			}
+		}
+
+		template = '{ printedObj }';
+	}
+
+	const printedObj = arr.join( ', ' );
+
+	return template.replace( 'printedObj', printedObj );
 }
 
 // returns empty array or object due to obj type
@@ -90,24 +143,24 @@ function newObject( obj ) { return Array.isArray( obj ) ? [] : {} }
  */
 function replaceComplexObjectsWithStrings( obj ) {
 	for ( var i in obj ) {
-    	if ( obj[ i ] instanceof Promise ) {
-    		obj[ i ] = '[Promise]';
-    		continue;
-    	}
+		if ( obj[ i ] instanceof Promise ) {
+			obj[ i ] = '[Promise]';
+			continue;
+		}
 
-        switch ( typeof obj[ i ] ) {
-            case 'object':
-                obj[ i ] = valueOf( obj[ i ] );
-                obj[ i ] = replaceComplexObjectsWithStrings( obj[ i ] );
-            break;
+		switch ( typeof obj[ i ] ) {
+			case 'object':
+				obj[ i ] = valueOf( obj[ i ] );
+				obj[ i ] = replaceComplexObjectsWithStrings( obj[ i ] );
+			break;
 
-            case 'function': obj[ i ] = '[Function]';
-            // case 'function': obj[ i ] = obj[ i ].toString();
-            break;
-        }
-    }
+			case 'function': obj[ i ] = '[Function]';
+			// case 'function': obj[ i ] = obj[ i ].toString();
+			break;
+		}
+	}
 
-    return obj;
+	return obj;
 }
 
 /**
@@ -119,11 +172,11 @@ function replaceComplexObjectsWithStrings( obj ) {
 function resolveTemplate( template/*, ...data*/ ) {
 	if ( !template ) return;
 
-    const dataObjects = Array.prototype.slice.call( arguments, 1 );
+	const dataObjects = Array.prototype.slice.call( arguments, 1 );
 
-    return template.replace( /\{(.+?)\}/g, ( match, p1 ) => {
-        return getData( dataObjects, p1, match );
-    });
+	return template.replace( /\{(.+?)\}/g, ( match, p1 ) => {
+		return getData( dataObjects, p1, match );
+	});
 }
 
 /**
@@ -134,22 +187,22 @@ function resolveTemplate( template/*, ...data*/ ) {
  * @return (Mixed)
  */
 function getData( dataObjects, key, defaultValue ) {
-    if ( Array.isArray( dataObjects ) ) {
-        for ( var result, i = 0; i < dataObjects.length; ++i ) {
-            result = getData( dataObjects[ i ], key, defaultValue );
-            if ( result !== defaultValue ) return result;
-        }
+	if ( Array.isArray( dataObjects ) ) {
+		for ( var result, i = 0; i < dataObjects.length; ++i ) {
+			result = getData( dataObjects[ i ], key, defaultValue );
+			if ( result !== defaultValue ) return result;
+		}
 
-        return defaultValue;
-    }
+		return defaultValue;
+	}
 
-    if ( !dataObjects || dataObjects[ key ] === undefined ) return defaultValue;
+	if ( !dataObjects || dataObjects[ key ] === undefined ) return defaultValue;
 
-    var value = dataObjects[ key ];
+	var value = dataObjects[ key ];
 
-    if ( value instanceof Error ) value = value + value.stack;
+	if ( value instanceof Error ) value = value + value.stack;
 
-    return value;
+	return value;
 }
 
 /**
@@ -159,9 +212,9 @@ function getData( dataObjects, key, defaultValue ) {
  * @return (Mixed)
  */
 function ignore( config, key ) {
-    if ( config.only.length ) return !~config.only.indexOf( key );
+	if ( config.only.length ) return !~config.only.indexOf( key );
 
-    if ( config.except.length && ~config.except.indexOf( key ) ) return true;
+	if ( config.except.length && ~config.except.indexOf( key ) ) return true;
 
-    return false;
+	return false;
 }

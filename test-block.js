@@ -222,7 +222,9 @@ class TestBlock {
 
 		msgConfig.before && msgConfig.before.call( this );
 
-		log.apply( null, Array.prototype.slice.call( arguments, 1 ) );
+		arguments[ 0 ] = msgConfig.level > 2;
+
+		log.apply( null, Array.prototype.slice.call( arguments ) );
 
 		msgConfig.after && msgConfig.after.call( this );
 	}
@@ -250,14 +252,14 @@ class TestBlock {
 		return !~this.testIndexes.indexOf( index );
 	}
 
-	_showLogs() {
-		if ( !this.testIndexes && !this.forceLogs ) return;
-		const args =
-			Array.prototype.slice.call( arguments )
-				.map( el => typeof el !== 'object' ? el : Helpers.print( el ) );
+	// _showLogs() {
+	// 	if ( !this.testIndexes && !this.forceLogs ) return;
+	// 	const args =
+	// 		Array.prototype.slice.call( arguments )
+	// 			.map( el => typeof el !== 'object' ? el : Helpers.print( el ) );
 
-		console.log.apply( console, args );
-	}
+	// 	console.log.apply( console, args );
+	// }
 
 	_exit( force ) { return force ? Promise.reject() : Promise.resolve() }
 };
@@ -272,11 +274,11 @@ module.exports = TestBlock;
 
 function assert() { console.assert.apply( console, arguments ) }
 
-function log() {
+function log( showHiddenProps ) {
 	const args =
-		Array.prototype.slice.call( arguments )
+		Array.prototype.slice.call( arguments, 1 )
 			.filter( el => el !== undefined )
-			.map( el => typeof el !== 'object' ? el : Helpers.print( el ) );
+			.map( el => typeof el !== 'object' ? el : Helpers.print( el, showHiddenProps ) );
 
 	if ( !args.length ) return;
 
