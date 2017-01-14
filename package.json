@@ -1,6 +1,6 @@
 {
   "name": "ultimate-tests",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Provides flexible tests environment",
   "main": "index.js",
   "scripts": {
